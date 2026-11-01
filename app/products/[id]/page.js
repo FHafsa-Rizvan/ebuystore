@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProductById } from "@/lib/products";
 import { formatPrice } from "@/data/products";
-import { Thumb } from "@/components/ProductCard";
+import { CategoryTag } from "@/components/CategoryIcon";
+import ImageGallery from "@/components/ImageGallery";
 import AddToCartButton from "@/components/AddToCartButton";
 
 // Always fetch fresh data so admin changes show up straight away
@@ -23,9 +24,13 @@ export default async function ProductPage({ params }) {
     <>
       <Link href="/" className="back">← Back to products</Link>
       <div className="product">
-        <Thumb product={product} />
+        <ImageGallery images={product.images} name={product.name} emoji={product.emoji} color={product.color} />
         <div>
-          <span className="card-cat">{product.category}</span>
+          {product.categories.length > 0 && (
+            <div className="tags">
+              {product.categories.map((cid) => <CategoryTag key={cid} id={cid} full />)}
+            </div>
+          )}
           <h1>{product.name}</h1>
           <div className="price">{formatPrice(product.price)}</div>
           <p className="desc">{product.description}</p>

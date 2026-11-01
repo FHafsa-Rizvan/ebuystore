@@ -1,6 +1,8 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { LuCheck } from "react-icons/lu";
 
 const CartContext = createContext(null);
 const STORAGE_KEY = "ebuy-cart-v1";
@@ -8,6 +10,8 @@ const STORAGE_KEY = "ebuy-cart-v1";
 export function CartProvider({ children }) {
   const [items, setItems] = useState([]); // [{ id, name, price, emoji, color, image, qty }]
   const [loaded, setLoaded] = useState(false);
+  const [toast, setToast] = useState(null);
+  const toastTimer = useRef(null);
 
   // Load saved cart once in the browser
   useEffect(() => {
@@ -26,15 +30,23 @@ export function CartProvider({ children }) {
     } catch {}
   }, [items, loaded]);
 
-  const addItem = (product, qty = 1) =>
+  useEffect(() => () => clearTimeout(toastTimer.current), []);
+
+  const addItem = (product, qty = 1) => {
     setItems((prev) => {
       const existing = prev.find((i) => i.id === product.id);
       if (existing) {
         return prev.map((i) => (i.id === product.id ? { ...i, qty: i.qty + qty } : i));
       }
-      const { id, name, price, emoji, color, image } = product;
+      const { id, name, price, emoji, color } = product;
+      const image = product.images?.[0] || product.image || null;
       return [...prev, { id, name, price, emoji, color, image, qty }];
     });
+    // Message that slides up from the bottom of the screen
+    setToast({ key: Date.now(), name: product.name });
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 3200);
+  };
 
   const setQty = (id, qty) =>
     setItems((prev) =>
@@ -50,6 +62,16 @@ export function CartProvider({ children }) {
   return (
     <CartContext.Provider value={{ items, loaded, count, total, addItem, setQty, removeItem, clear }}>
       {children}
+      {toast && (
+        <div className="toast" role="status" key={toast.key}>
+          <span className="toast-ico"><LuCheck size={18} aria-hidden="true" /></span>
+          <span className="toast-text">
+            <b>{toast.name}</b> added to your cart
+            <small>{count} {count === 1 ? "item" : "items"} in cart</small>
+          </span>
+          <Link href="/cart" className="toast-link" onClick={() => setToast(null)}>View cart</Link>
+        </div>
+      )}
     </CartContext.Provider>
   );
 }

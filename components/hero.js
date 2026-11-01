@@ -9,7 +9,7 @@ const STEP_MS = 3200;
 const STEPS = [
   { title: "Browse", text: "Find glassware, kitchenware and decor." },
   { title: "Add to cart", text: "Tap Add to cart on anything you like." },
-  { title: "Review your cart", text: "Check quantities, then add your name and address." },
+  { title: "Review your cart", text: "Check quantities, then add your name, contact number and address." },
   { title: "Buy Now on WhatsApp", text: "Your order opens in WhatsApp, ready to send." },
 ];
 
@@ -110,6 +110,7 @@ function PhoneDemo({ step }) {
             </div>
             <div className="ph-total"><span>Total</span><span>Rs. 7,200</span></div>
             <div className="ph-field">Your name</div>
+            <div className="ph-field">Contact number</div>
             <div className="ph-field">Delivery address</div>
             <div className="ph-buy">Buy Now on WhatsApp</div>
             <div className="ph-note">Payment and delivery are confirmed in the chat.</div>

@@ -5,25 +5,40 @@ import Link from "next/link";
 import { useCart } from "@/components/CartProvider";
 import { Thumb } from "@/components/ProductCard";
 import { formatPrice } from "@/data/products";
-import { buildWhatsAppUrl, isWhatsAppConfigured } from "@/lib/whatsapp";
+import { buildWhatsAppUrl, isValidContactNumber, isWhatsAppConfigured } from "@/lib/whatsapp";
 
 export default function CartPage() {
   const { items, loaded, total, setQty, removeItem, clear } = useCart();
   const [customer, setCustomer] = useState({ name: "", phone: "", address: "", notes: "" });
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState({}); // { name, phone, address }
+  const [configError, setConfigError] = useState("");
 
-  const update = (field) => (e) => setCustomer((c) => ({ ...c, [field]: e.target.value }));
+  const update = (field) => (e) => {
+    setCustomer((c) => ({ ...c, [field]: e.target.value }));
+    if (errors[field]) setErrors((er) => ({ ...er, [field]: "" }));
+  };
 
   function handleBuyNow() {
     if (!isWhatsAppConfigured()) {
-      setError("WhatsApp number is not set. Add NEXT_PUBLIC_WHATSAPP_NUMBER to .env.local.");
+      setConfigError("WhatsApp number is not set. Add NEXT_PUBLIC_WHATSAPP_NUMBER to .env.local.");
       return;
     }
-    if (!customer.name.trim() || !customer.address.trim()) {
-      setError("Please enter your name and delivery address.");
+    setConfigError("");
+
+    const found = {};
+    if (!customer.name.trim()) found.name = "Please enter your name.";
+    if (!customer.phone.trim()) found.phone = "Please enter your contact number.";
+    else if (!isValidContactNumber(customer.phone)) found.phone = "Please enter a valid contact number, for example 0771234567.";
+    if (!customer.address.trim()) found.address = "Please enter your delivery address.";
+
+    if (Object.keys(found).length) {
+      setErrors(found);
+      // Take the customer to the first field that needs fixing
+      const first = ["name", "phone", "address"].find((k) => found[k]);
+      document.getElementById(`field-${first}`)?.focus();
       return;
     }
-    setError("");
+    setErrors({});
     window.open(buildWhatsAppUrl(items, customer), "_blank", "noopener");
   }
 
@@ -69,19 +84,47 @@ export default function CartPage() {
         <div className="row total"><span>Total</span><span>{formatPrice(total)}</span></div>
 
         <label className="field">Name *
-          <input value={customer.name} onChange={update("name")} autoComplete="name" />
+          <input
+            id="field-name"
+            value={customer.name}
+            onChange={update("name")}
+            autoComplete="name"
+            aria-invalid={Boolean(errors.name)}
+            className={errors.name ? "has-error" : ""}
+          />
+          {errors.name && <span className="field-error">{errors.name}</span>}
         </label>
-        <label className="field">Phone
-          <input value={customer.phone} onChange={update("phone")} autoComplete="tel" inputMode="tel" />
+        <label className="field">Contact number *
+          <input
+            id="field-phone"
+            type="tel"
+            inputMode="tel"
+            placeholder="e.g. 0771234567"
+            value={customer.phone}
+            onChange={update("phone")}
+            autoComplete="tel"
+            aria-invalid={Boolean(errors.phone)}
+            className={errors.phone ? "has-error" : ""}
+          />
+          {errors.phone && <span className="field-error">{errors.phone}</span>}
         </label>
         <label className="field">Delivery address *
-          <textarea rows={3} value={customer.address} onChange={update("address")} autoComplete="street-address" />
+          <textarea
+            id="field-address"
+            rows={3}
+            value={customer.address}
+            onChange={update("address")}
+            autoComplete="street-address"
+            aria-invalid={Boolean(errors.address)}
+            className={errors.address ? "has-error" : ""}
+          />
+          {errors.address && <span className="field-error">{errors.address}</span>}
         </label>
         <label className="field">Notes (optional)
           <input value={customer.notes} onChange={update("notes")} />
         </label>
 
-        {error && <p className="error">{error}</p>}
+        {configError && <p className="error">{configError}</p>}
 
         <button className="btn btn-whatsapp" onClick={handleBuyNow}>Buy Now on WhatsApp</button>
         <p className="note">

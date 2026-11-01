@@ -3,9 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { formatPrice } from "@/data/products";
-import ProductForm, { storagePathFromUrl } from "@/components/admin/ProductForm";
-
-const DEFAULT_CATEGORIES = ["Homeware", "Glassware", "Kitchenware", "Decor"];
+import ProductForm, { storagePathFromUrl, imagesOfRow, categoriesOfRow } from "@/components/admin/ProductForm";
+import { CategoryTag } from "@/components/CategoryIcon";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -70,19 +69,16 @@ function Dashboard({ email }) {
     if (!window.confirm(`Delete "${row.name}"? This cannot be undone.`)) return;
     const { error } = await supabase.from("products").delete().eq("id", row.id);
     if (error) return setError(error.message);
-    const path = storagePathFromUrl(row.image_url);
-    if (path) await supabase.storage.from("product-images").remove([path]);
+    const paths = imagesOfRow(row).map(storagePathFromUrl).filter(Boolean);
+    if (paths.length) await supabase.storage.from("product-images").remove(paths);
     load();
   }
-
-  const categories = [...new Set([...DEFAULT_CATEGORIES, ...(rows || []).map((r) => r.category)])];
 
   if (editing) {
     return (
       <div className="admin-wrap">
         <ProductForm
           product={editing === "new" ? null : editing}
-          categories={categories}
           onSaved={() => {
             setEditing(null);
             load();
@@ -115,14 +111,21 @@ function Dashboard({ email }) {
       {rows?.map((row) => (
         <div className="admin-row" key={row.id}>
           <div className="thumb" style={{ background: "#f1ede6" }}>
-            {row.image_url ? <img src={row.image_url} alt={row.name} /> : <span>🛍️</span>}
+            {imagesOfRow(row)[0] ? <img src={imagesOfRow(row)[0]} alt={row.name} /> : <span>🛍️</span>}
           </div>
           <div className="meta">
             <div className="name">
               {row.name}
               {row.in_stock === false && <span className="badge-out">Out of stock</span>}
             </div>
-            <div className="sub">{row.category} · {formatPrice(row.price)}</div>
+            <div className="sub">
+              {formatPrice(row.price)} · {imagesOfRow(row).length} {imagesOfRow(row).length === 1 ? "photo" : "photos"}
+            </div>
+            <div className="tags">
+              {categoriesOfRow(row).length === 0
+                ? <span className="tag tag-more">No category yet. Click Edit</span>
+                : categoriesOfRow(row).map((id) => <CategoryTag key={id} id={id} />)}
+            </div>
           </div>
           <div className="btns">
             <button className="btn btn-outline btn-sm" onClick={() => setEditing(row)}>Edit</button>

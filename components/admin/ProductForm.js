@@ -1,9 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { LuCheck, LuStar, LuX } from "react-icons/lu";
 import { supabase } from "@/lib/supabase";
+import { CATEGORIES, LEGACY_CATEGORY } from "@/lib/categories";
+import { CategoryIcon } from "@/components/CategoryIcon";
 
 const BUCKET = "product-images";
+const MAX_IMAGES = 6;
 
 // Phone photos are often 5 MB+. Shrink to max 1200px JPEG before uploading.
 async function resizeImage(file, max = 1200) {
@@ -28,63 +32,103 @@ export function storagePathFromUrl(url) {
   return i >= 0 ? decodeURIComponent(url.slice(i + marker.length)) : null;
 }
 
-export default function ProductForm({ product, categories, onSaved, onCancel }) {
+// All saved image URLs of a product row (new `images` list, or the old single image)
+export function imagesOfRow(row) {
+  if (Array.isArray(row?.images) && row.images.length) return row.images;
+  return row?.image_url ? [row.image_url] : [];
+}
+
+// Category ids of a product row (new `categories` list, or the old single category)
+export function categoriesOfRow(row) {
+  if (Array.isArray(row?.categories) && row.categories.length) return row.categories;
+  const legacy = LEGACY_CATEGORY[String(row?.category || "").toLowerCase()];
+  return legacy ? [legacy] : [];
+}
+
+export default function ProductForm({ product, onSaved, onCancel }) {
   const editing = Boolean(product);
   const [name, setName] = useState(product?.name || "");
-  const [category, setCategory] = useState(product?.category || "");
+  const [cats, setCats] = useState(() => categoriesOfRow(product));
   const [price, setPrice] = useState(product ? String(product.price) : "");
   const [description, setDescription] = useState(product?.description || "");
   const [inStock, setInStock] = useState(product ? product.in_stock !== false : true);
-  const [file, setFile] = useState(null);
-  const [preview, setPreview] = useState(product?.image_url || "");
+  // Each photo: { key, url (saved or preview), file (only for new photos) }
+  const [photos, setPhotos] = useState(() =>
+    imagesOfRow(product).map((url) => ({ key: url, url, file: null }))
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const fileInput = useRef(null);
 
-  function handleFile(e) {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    if (!f.type.startsWith("image/")) {
-      setError("Please choose an image file (JPG or PNG).");
-      return;
+  const toggleCat = (id) =>
+    setCats((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id]));
+
+  function handleFiles(e) {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
+    if (!files.length) return;
+    if (files.some((f) => !f.type.startsWith("image/"))) {
+      return setError("Please choose image files only (JPG or PNG).");
     }
-    setError("");
-    setFile(f);
-    setPreview(URL.createObjectURL(f));
+    const room = MAX_IMAGES - photos.length;
+    if (files.length > room) {
+      setError(`You can add up to ${MAX_IMAGES} photos per product.`);
+    } else {
+      setError("");
+    }
+    const added = files.slice(0, Math.max(0, room)).map((file) => ({
+      key: crypto.randomUUID(),
+      url: URL.createObjectURL(file),
+      file,
+    }));
+    setPhotos((p) => [...p, ...added]);
   }
+
+  const removePhoto = (key) => setPhotos((p) => p.filter((x) => x.key !== key));
+  const makeMain = (key) =>
+    setPhotos((p) => {
+      const chosen = p.find((x) => x.key === key);
+      return [chosen, ...p.filter((x) => x.key !== key)];
+    });
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
 
     const priceNum = Math.round(Number(price));
-    if (!name.trim() || !category.trim()) return setError("Name and category are required.");
+    if (!name.trim()) return setError("Please enter the product name.");
+    if (cats.length === 0) return setError("Please choose at least one category.");
     if (price.trim() === "" || !Number.isFinite(priceNum) || priceNum < 0) {
       return setError("Please enter a valid price.");
     }
 
     setSaving(true);
+    const uploaded = []; // paths uploaded in this save, removed again if saving fails
     try {
-      let imageUrl = product?.image_url || null;
-      let oldPath = null;
-
-      if (file) {
-        const blob = await resizeImage(file);
+      const urls = [];
+      for (const p of photos) {
+        if (!p.file) {
+          urls.push(p.url);
+          continue;
+        }
+        const blob = await resizeImage(p.file);
         const path = `${crypto.randomUUID()}.jpg`;
         const { error: upErr } = await supabase.storage
           .from(BUCKET)
           .upload(path, blob, { contentType: "image/jpeg" });
         if (upErr) throw upErr;
-        imageUrl = supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
-        oldPath = storagePathFromUrl(product?.image_url);
+        uploaded.push(path);
+        urls.push(supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl);
       }
 
       const row = {
         name: name.trim(),
-        category: category.trim(),
+        categories: cats,
         price: priceNum,
         description: description.trim(),
         in_stock: inStock,
-        image_url: imageUrl,
+        images: urls,
+        image_url: urls[0] || null,
       };
 
       const { error: dbErr } = editing
@@ -92,11 +136,16 @@ export default function ProductForm({ product, categories, onSaved, onCancel }) 
         : await supabase.from("products").insert(row);
       if (dbErr) throw dbErr;
 
-      // Only remove the replaced photo once the product saved successfully
-      if (oldPath) await supabase.storage.from(BUCKET).remove([oldPath]);
+      // Only remove photos the admin deleted once the product saved successfully
+      const gone = imagesOfRow(product)
+        .filter((u) => !urls.includes(u))
+        .map(storagePathFromUrl)
+        .filter(Boolean);
+      if (gone.length) await supabase.storage.from(BUCKET).remove(gone);
 
       onSaved();
     } catch (err) {
+      if (uploaded.length) await supabase.storage.from(BUCKET).remove(uploaded);
       setError(err.message || "Something went wrong. Please try again.");
       setSaving(false);
     }
@@ -110,25 +159,58 @@ export default function ProductForm({ product, categories, onSaved, onCancel }) 
         <input value={name} onChange={(e) => setName(e.target.value)} />
       </label>
 
-      <div className="row2">
-        <label className="field">Category *
-          <input list="category-options" value={category} onChange={(e) => setCategory(e.target.value)} />
-          <datalist id="category-options">
-            {categories.map((c) => <option key={c} value={c} />)}
-          </datalist>
-        </label>
-        <label className="field">Price (Rs.) *
-          <input inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} />
-        </label>
+      <label className="field">Price (Rs.) *
+        <input inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} />
+      </label>
+
+      <div className="field">Categories * <span className="hint">(tick every one that fits)</span>
+        <div className="cat-picker">
+          {CATEGORIES.map((c) => {
+            const on = cats.includes(c.id);
+            return (
+              <button
+                type="button"
+                key={c.id}
+                className={`cat-pick${on ? " on" : ""}`}
+                aria-pressed={on}
+                onClick={() => toggleCat(c.id)}
+              >
+                <CategoryIcon id={c.id} size={20} box={34} radius={10} />
+                <span>{c.label}</span>
+                {on && <LuCheck className="cat-pick-check" size={16} aria-hidden="true" />}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <label className="field">Description
         <textarea rows={4} value={description} onChange={(e) => setDescription(e.target.value)} />
       </label>
 
-      <div className="field">Photo
-        {preview && <img className="preview" src={preview} alt="Product preview" />}
-        <input type="file" accept="image/*" onChange={handleFile} />
+      <div className="field">Photos <span className="hint">(up to {MAX_IMAGES}. The first one is the main photo)</span>
+        <div className="photo-grid">
+          {photos.map((p, i) => (
+            <div className="photo" key={p.key}>
+              <img src={p.url} alt={`Photo ${i + 1}`} />
+              {i === 0 ? (
+                <span className="photo-main"><LuStar size={12} aria-hidden="true" /> Main</span>
+              ) : (
+                <button type="button" className="photo-make" onClick={() => makeMain(p.key)}>Make main</button>
+              )}
+              <button type="button" className="photo-x" onClick={() => removePhoto(p.key)} aria-label={`Remove photo ${i + 1}`}>
+                <LuX size={14} aria-hidden="true" />
+              </button>
+            </div>
+          ))}
+          {photos.length < MAX_IMAGES && (
+            <button type="button" className="photo-add" onClick={() => fileInput.current?.click()}>
+              <span>+</span>
+              Add photos
+            </button>
+          )}
+        </div>
+        <input ref={fileInput} type="file" accept="image/*" multiple hidden onChange={handleFiles} />
       </div>
 
       <label className="check">

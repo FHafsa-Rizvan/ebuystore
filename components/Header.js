@@ -12,9 +12,10 @@ export default function Header() {
           <img src="/logo-mark.png" alt="" width="40" height="40" />
           Ebuy
         </Link>
-        <Link href="/cart" className="cart-link">
+        <Link href="/cart" className="cart-link" aria-label={`Cart, ${loaded ? count : 0} items`}>
           Cart
-          {loaded && count > 0 && <span className="cart-badge">{count}</span>}
+          {/* key={count}: the badge re-mounts and "jumps" every time the count changes */}
+          {loaded && count > 0 && <span className="cart-badge" key={count}>{count}</span>}
         </Link>
       </div>
     </header>
