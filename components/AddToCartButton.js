@@ -18,7 +18,7 @@ export default function AddToCartButton({ product, outline = false }) {
   }
 
   return (
-    <button className={`btn ${outline ? "btn-outline" : "btn-amber"}`} onClick={handleClick}>
+    <button className={`btn ${outline ? "btn-outline" : ""}`} onClick={handleClick}>
       {added ? "Added ✓" : "Add to cart"}
     </button>
   );

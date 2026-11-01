@@ -8,7 +8,10 @@ export default function Header() {
   return (
     <header className="header">
       <div className="container header-inner">
-        <Link href="/" className="logo">Ebuy</Link>
+        <Link href="/" className="logo">
+          <img src="/logo-mark.png" alt="" width="40" height="40" />
+          Ebuy
+        </Link>
         <Link href="/cart" className="cart-link">
           Cart
           {loaded && count > 0 && <span className="cart-badge">{count}</span>}

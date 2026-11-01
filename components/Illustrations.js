@@ -1,7 +1,7 @@
 // Small hand-drawn style illustrations used in the hero. Each accepts normal <svg> props
 // (x, y, width, height, className) so they can be nested inside a larger scene.
 
-const INK = "#0f2f2c";
+const INK = "#1a1710";
 
 export function WineGlass({ wine = "#c0485f", ...props }) {
   return (
@@ -42,7 +42,7 @@ export function Tumbler(props) {
 export function Jar(props) {
   return (
     <svg viewBox="0 0 100 100" fill="none" {...props}>
-      <rect x="28" y="6" width="44" height="14" rx="4" fill="#f0a330" stroke={INK} strokeWidth="2.5" />
+      <rect x="28" y="6" width="44" height="14" rx="4" fill="#d2a548" stroke={INK} strokeWidth="2.5" />
       <path
         d="M26 24h48c3 3 5 6 5 12v46c0 7-5 12-12 12H33c-7 0-12-5-12-12V36c0-6 2-9 5-12z"
         fill="#fff"
@@ -72,7 +72,7 @@ export function Vase(props) {
         <path d="M50 60C53 40 62 28 72 18" />
         <path d="M50 60V14" />
       </g>
-      <circle cx="30" cy="18" r="8" fill="#f0a330" stroke={INK} strokeWidth="2" />
+      <circle cx="30" cy="18" r="8" fill="#d2a548" stroke={INK} strokeWidth="2" />
       <circle cx="72" cy="16" r="8" fill="#e8708a" stroke={INK} strokeWidth="2" />
       <circle cx="50" cy="10" r="7" fill="#fff" stroke={INK} strokeWidth="2" />
       <path
@@ -92,7 +92,7 @@ export function Candle(props) {
   return (
     <svg viewBox="0 0 100 100" fill="none" {...props}>
       <path d="M50 54V40" stroke={INK} strokeWidth="2.5" strokeLinecap="round" />
-      <path d="M50 10c8 9 9 16 0 25-9-9-8-16 0-25z" fill="#f0a330" stroke={INK} strokeWidth="2" strokeLinejoin="round" />
+      <path d="M50 10c8 9 9 16 0 25-9-9-8-16 0-25z" fill="#d2a548" stroke={INK} strokeWidth="2" strokeLinejoin="round" />
       <path d="M24 42h52v42c0 7-5 12-12 12H36c-7 0-12-5-12-12z" fill="#fff" fillOpacity=".6" stroke={INK} strokeWidth="2.5" strokeLinejoin="round" />
       <path d="M26.500 54h47v30c0 6-4 10-10 10H36.500c-6 0-10-4-10-10z" fill="#f4e3b8" />
       <path d="M32 50v30" stroke="#fff" strokeWidth="3" strokeLinecap="round" />
@@ -106,7 +106,7 @@ export function Plates(props) {
       <ellipse cx="50" cy="68" rx="40" ry="14" fill="#fff" stroke={INK} strokeWidth="2.5" />
       <path d="M10 56v12M90 56v12" stroke={INK} strokeWidth="2.5" />
       <ellipse cx="50" cy="56" rx="40" ry="14" fill="#fff" stroke={INK} strokeWidth="2.5" />
-      <ellipse cx="50" cy="56" rx="26" ry="8" fill="#e4f1ee" stroke="#8fcbbd" strokeWidth="2" />
+      <ellipse cx="50" cy="56" rx="26" ry="8" fill="#f6ecd2" stroke="#d9bf72" strokeWidth="2" />
     </svg>
   );
 }

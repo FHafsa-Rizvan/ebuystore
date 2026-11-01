@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { WineGlass, Tumbler, Jar, Vase, Candle, Plates } from "./Illustrations";
 import { WHATSAPP_NUMBER, isWhatsAppConfigured } from "@/lib/whatsapp";
 
-const STEP_MS = 4600;
+const STEP_MS = 3200;
 
 const STEPS = [
   { title: "Browse", text: "Find glassware, kitchenware and decor." },
@@ -144,6 +144,23 @@ function PhoneDemo({ step }) {
 
 export default function Hero() {
   const [step, setStep] = useState(0);
+  const stageRef = useRef(null);
+
+  // Restart from step 1 each time the demo scrolls into view, so nobody joins halfway.
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el || !("IntersectionObserver" in window)) return;
+    let wasVisible = false;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !wasVisible) setStep(0);
+        wasVisible = entry.isIntersecting;
+      },
+      { threshold: 0.5 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   // Advance automatically, unless the visitor prefers reduced motion.
   // Choosing a step resets the timer because `step` is a dependency.
@@ -157,14 +174,14 @@ export default function Hero() {
   return (
     <section className="hero2">
       <div className="hero2-left">
-        <div className="hero2-copy">
-          <h1 className="hero2-h">Glassware and homeware, delivered to your door.</h1>
+        <h1 className="hero2-h">Glassware and homeware, delivered to your door.</h1>
+        <div className="hero2-rest">
           <p className="hero2-lead">
             Pick what you like, add it to your cart, and send your order to us on WhatsApp. We confirm
             payment and delivery in the chat.
           </p>
           <div className="hero2-cta">
-            <a href="#products" className="btn btn-amber">Shop products</a>
+            <a href="#products" className="btn">Shop products</a>
             {isWhatsAppConfigured() && (
               <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noopener" className="btn btn-outline">
                 Chat with us on WhatsApp
@@ -194,13 +211,17 @@ export default function Hero() {
         </ol>
       </div>
 
-      <div className="stage">
+      <div className="stage" data-step={step} ref={stageRef}>
+        <div className="pill-live"><i />See how ordering works</div>
+        <div className="fc fc-add">✓ 2 items added to cart</div>
+        <div className="fc fc-total">Total: Rs. 7,200</div>
+        <div className="fc fc-sent">✓ Order sent on WhatsApp</div>
         <svg className="still" viewBox="0 0 460 460" aria-hidden="true">
-          <circle cx="230" cy="230" r="230" fill="#cfe9e3" />
-          <ellipse cx="112" cy="378" rx="52" ry="7" fill="#0f2f2c" opacity=".12" />
-          <ellipse cx="198" cy="372" rx="48" ry="7" fill="#0f2f2c" opacity=".12" />
-          <Vase x="62" y="236" width="100" height="140" />
-          <WineGlass x="148" y="252" width="100" height="120" />
+          <circle cx="230" cy="230" r="230" fill="#f3e5bd" />
+          <ellipse cx="100" cy="378" rx="48" ry="7" fill="#1a1710" opacity=".12" />
+          <ellipse cx="184" cy="372" rx="44" ry="7" fill="#1a1710" opacity=".12" />
+          <Vase x="56" y="253" width="88" height="123" />
+          <WineGlass x="138" y="262" width="90" height="108" />
         </svg>
         <PhoneDemo step={step} />
       </div>
