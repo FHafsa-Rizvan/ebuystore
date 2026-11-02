@@ -10,7 +10,7 @@ export default function Header() {
       <div className="container header-inner">
         <Link href="/" className="logo">
           <img src="/logo-mark.png" alt="" width="40" height="40" />
-          Ebuy
+          EbuyStore
         </Link>
         <Link href="/cart" className="cart-link" aria-label={`Cart, ${loaded ? count : 0} items`}>
           Cart

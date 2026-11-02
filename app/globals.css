@@ -196,3 +196,23 @@ a { color: inherit; text-decoration: none; }
 .load-more-wrap .btn { width: auto; min-width: 240px; }
 .load-more-note { color: var(--muted); font-size: 0.85rem; }
 .link-btn { border: 0; background: none; padding: 0; font: inherit; font-weight: 700; color: inherit; text-decoration: underline; cursor: pointer; }
+
+/* ---------- Phones: two products per row ---------- */
+@media (max-width: 560px) {
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding-bottom: 40px; }
+  .card { border-radius: 14px; }
+  .card .thumb { font-size: 3rem; }
+  .card .thumb-count { right: 6px; bottom: 6px; padding: 2px 7px; font-size: 0.66rem; }
+  .card-body { padding: 10px; gap: 5px; }
+  .card-title { font-size: 0.9rem; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  /* One category tag is enough on a small card; the product page shows them all */
+  .card .tags .tag:nth-child(n + 2) { display: none; }
+  .card .tag { max-width: 100%; font-size: 0.66rem; padding: 2px 7px 2px 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .price-line { flex-direction: column; align-items: flex-start; gap: 3px; }
+  .card .price { font-size: 0.98rem; }
+  .card .code { font-size: 0.66rem; }
+  .card-actions { padding-top: 4px; }
+  .card .atc-btn { padding: 9px 6px; font-size: 0.85rem; gap: 5px; }
+  .card .atc-status { font-size: 0.7rem; text-align: center; line-height: 1.25; }
+  .load-more-wrap .btn { width: 100%; min-width: 0; }
+}
