@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
+import { thumbUrl } from "@/lib/images";
 
 // Big photo with thumbnails underneath, arrows, and swipe on touch screens.
 export default function ImageGallery({ images = [], name, emoji, color }) {
@@ -52,7 +53,17 @@ export default function ImageGallery({ images = [], name, emoji, color }) {
               aria-label={`Show photo ${idx + 1}`}
               aria-current={idx === i}
             >
-              <img src={src} alt="" />
+              <img
+                src={thumbUrl(src)}
+                alt=""
+                loading="lazy"
+                onError={(e) => {
+                  if (e.currentTarget.dataset.full !== "1") {
+                    e.currentTarget.dataset.full = "1";
+                    e.currentTarget.src = src;
+                  }
+                }}
+              />
             </button>
           ))}
         </div>

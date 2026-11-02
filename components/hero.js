@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { LuTruck } from "react-icons/lu";
 import { WineGlass, Tumbler, Jar, Vase, Candle, Plates } from "./Illustrations";
 import { WHATSAPP_NUMBER, isWhatsAppConfigured } from "@/lib/whatsapp";
 
-const STEP_MS = 3200;
+const STEP_MS = 1800;
 
 const STEPS = [
   { title: "Browse", text: "Find glassware, kitchenware and decor." },
@@ -175,11 +176,14 @@ export default function Hero() {
   return (
     <section className="hero2">
       <div className="hero2-left">
-        <h1 className="hero2-h">Glassware and homeware, delivered to your door.</h1>
+        <h1 className="hero2-h">Quality homeware, delivered island‑wide to your doorstep.</h1>
         <div className="hero2-rest">
+          <p className="hero2-delivery">
+            <LuTruck size={18} aria-hidden="true" />
+            Delivery in 5-7 working days, anywhere in Sri Lanka
+          </p>
           <p className="hero2-lead">
-            Pick what you like, add it to your cart, and send your order to us on WhatsApp. We confirm
-            payment and delivery in the chat.
+            Quality items at affordable prices, all in one place: glassware, kitchen and household essentials, electronics, watches, baby and kids’ items, gifts and more. Order in minutes and chat with us on WhatsApp.
           </p>
           <div className="hero2-cta">
             <a href="#products" className="btn">Shop products</a>

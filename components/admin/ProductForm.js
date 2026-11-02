@@ -1,36 +1,16 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LuCheck, LuStar, LuX } from "react-icons/lu";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, LEGACY_CATEGORY } from "@/lib/categories";
 import { CategoryIcon } from "@/components/CategoryIcon";
+import {
+  BUCKET, CACHE_SECONDS, FULL_MAX, THUMB_MAX,
+  resizeImage, storagePathFromUrl, thumbPath, withThumbs,
+} from "@/lib/images";
 
-const BUCKET = "product-images";
 const MAX_IMAGES = 6;
-
-// Phone photos are often 5 MB+. Shrink to max 1200px JPEG before uploading.
-async function resizeImage(file, max = 1200) {
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
-  const w = Math.round(bitmap.width * scale);
-  const h = Math.round(bitmap.height * scale);
-  const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
-  canvas.getContext("2d").drawImage(bitmap, 0, 0, w, h);
-  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
-  if (!blob) throw new Error("Could not process this image. Try a JPG or PNG photo.");
-  return blob;
-}
-
-// Works out the file path inside the bucket from a public image URL.
-export function storagePathFromUrl(url) {
-  if (!url) return null;
-  const marker = `/${BUCKET}/`;
-  const i = url.indexOf(marker);
-  return i >= 0 ? decodeURIComponent(url.slice(i + marker.length)) : null;
-}
 
 // All saved image URLs of a product row (new `images` list, or the old single image)
 export function imagesOfRow(row) {
@@ -58,7 +38,23 @@ export default function ProductForm({ product, onSaved, onCancel }) {
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  // Product code: existing products keep theirs; a new product gets the next one reserved now
+  const [code, setCode] = useState(product?.code || "");
   const fileInput = useRef(null);
+
+  useEffect(() => {
+    if (editing) return;
+    let cancelled = false;
+    supabase.rpc("next_product_code").then(({ data, error: rpcErr }) => {
+      if (cancelled) return;
+      if (rpcErr || !data) {
+        setError("Could not create a product code. Run supabase/migration-product-codes.sql in Supabase first.");
+      } else {
+        setCode(data);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [editing]);
 
   const toggleCat = (id) =>
     setCats((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id]));
@@ -96,6 +92,7 @@ export default function ProductForm({ product, onSaved, onCancel }) {
     setError("");
 
     const priceNum = Math.round(Number(price));
+    if (!editing && !code) return setError("The product code is not ready yet. Please wait a moment and try again.");
     if (!name.trim()) return setError("Please enter the product name.");
     if (cats.length === 0) return setError("Please choose at least one category.");
     if (price.trim() === "" || !Number.isFinite(priceNum) || priceNum < 0) {
@@ -103,7 +100,7 @@ export default function ProductForm({ product, onSaved, onCancel }) {
     }
 
     setSaving(true);
-    const uploaded = []; // paths uploaded in this save, removed again if saving fails
+    const uploaded = []; // files uploaded in this save, removed again if saving fails
     try {
       const urls = [];
       for (const p of photos) {
@@ -111,17 +108,22 @@ export default function ProductForm({ product, onSaved, onCancel }) {
           urls.push(p.url);
           continue;
         }
-        const blob = await resizeImage(p.file);
+        // Two sizes: full photo for the product page, small one for the shop cards
+        const full = await resizeImage(p.file, FULL_MAX, 0.82);
+        const small = await resizeImage(p.file, THUMB_MAX, 0.78);
         const path = `${crypto.randomUUID()}.jpg`;
-        const { error: upErr } = await supabase.storage
-          .from(BUCKET)
-          .upload(path, blob, { contentType: "image/jpeg" });
+        const opts = { contentType: "image/jpeg", cacheControl: CACHE_SECONDS };
+        const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, full, opts);
         if (upErr) throw upErr;
         uploaded.push(path);
+        const { error: thErr } = await supabase.storage.from(BUCKET).upload(thumbPath(path), small, opts);
+        if (thErr) throw thErr;
+        uploaded.push(thumbPath(path));
         urls.push(supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl);
       }
 
       const row = {
+        ...(editing ? {} : { code }),
         name: name.trim(),
         categories: cats,
         price: priceNum,
@@ -141,7 +143,7 @@ export default function ProductForm({ product, onSaved, onCancel }) {
         .filter((u) => !urls.includes(u))
         .map(storagePathFromUrl)
         .filter(Boolean);
-      if (gone.length) await supabase.storage.from(BUCKET).remove(gone);
+      if (gone.length) await supabase.storage.from(BUCKET).remove(withThumbs(gone));
 
       onSaved();
     } catch (err) {
@@ -154,6 +156,12 @@ export default function ProductForm({ product, onSaved, onCancel }) {
   return (
     <form className="admin-card admin-form" onSubmit={handleSubmit}>
       <h2>{editing ? "Edit product" : "Add product"}</h2>
+
+      <div className="code-box">
+        <span>Product code</span>
+        <strong>{code || (editing ? "Not assigned yet" : "Creating...")}</strong>
+        <small>{editing ? "Customers quote this on WhatsApp. It never changes." : "Created automatically. Customers will quote this on WhatsApp."}</small>
+      </div>
 
       <label className="field">Product name *
         <input value={name} onChange={(e) => setName(e.target.value)} />

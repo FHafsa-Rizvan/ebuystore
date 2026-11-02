@@ -33,6 +33,7 @@ export default async function ProductPage({ params }) {
           )}
           <h1>{product.name}</h1>
           <div className="price">{formatPrice(product.price)}</div>
+          {product.code && <div className="code code-lg">Product code: <b>{product.code}</b></div>}
           <p className="desc">{product.description}</p>
           <AddToCartButton product={product} />
           <Link href="/cart" className="btn btn-outline" style={{ marginTop: 10 }}>View cart</Link>

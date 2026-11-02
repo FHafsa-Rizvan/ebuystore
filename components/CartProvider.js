@@ -8,7 +8,7 @@ const CartContext = createContext(null);
 const STORAGE_KEY = "ebuy-cart-v1";
 
 export function CartProvider({ children }) {
-  const [items, setItems] = useState([]); // [{ id, name, price, emoji, color, image, qty }]
+  const [items, setItems] = useState([]); // [{ id, code, name, price, emoji, color, image, qty }]
   const [loaded, setLoaded] = useState(false);
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
@@ -38,9 +38,9 @@ export function CartProvider({ children }) {
       if (existing) {
         return prev.map((i) => (i.id === product.id ? { ...i, qty: i.qty + qty } : i));
       }
-      const { id, name, price, emoji, color } = product;
+      const { id, name, price, emoji, color, code } = product;
       const image = product.images?.[0] || product.image || null;
-      return [...prev, { id, name, price, emoji, color, image, qty }];
+      return [...prev, { id, code, name, price, emoji, color, image, qty }];
     });
     // Message that slides up from the bottom of the screen
     setToast({ key: Date.now(), name: product.name });

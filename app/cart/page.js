@@ -57,7 +57,10 @@ export default function CartPage() {
   return (
     <div className="cart-layout">
       <section>
-        <h1>Your cart</h1>
+        <div className="cart-head">
+          <h1>Your cart</h1>
+          <Link href="/#products" className="btn btn-outline">← Continue shopping</Link>
+        </div>
         {items.map((item) => (
           <div className="cart-item" key={item.id}>
             <Thumb product={item} />
@@ -76,7 +79,10 @@ export default function CartPage() {
             </div>
           </div>
         ))}
-        <button className="remove" onClick={clear}>Clear cart</button>
+        <div className="cart-more">
+          <Link href="/#products" className="btn btn-outline">+ Add more products</Link>
+          <button className="remove" onClick={clear}>Clear cart</button>
+        </div>
       </section>
 
       <aside className="summary">
@@ -128,7 +134,8 @@ export default function CartPage() {
 
         <button className="btn btn-whatsapp" onClick={handleBuyNow}>Buy Now on WhatsApp</button>
         <p className="note">
-          Your order opens in WhatsApp as a ready-to-send message. Payment and delivery are confirmed in the chat.
+          Island-wide delivery to your doorstep in 5-7 working days. Your order opens in WhatsApp as a
+          ready-to-send message. Payment and delivery are confirmed in the chat.
         </p>
       </aside>
     </div>

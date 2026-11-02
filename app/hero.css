@@ -7,14 +7,21 @@
   padding: 40px 0 32px;
 }
 .hero2-h {
-  font-size: clamp(2.2rem, 4.6vw, 3.3rem);
+  font-size: clamp(2.1rem, 3.9vw, 2.9rem);
   line-height: 1.04;
   letter-spacing: -0.03em;
   font-weight: 700;
   margin: 0 0 16px;
-  max-width: 13em;
+  max-width: 16em;
   text-wrap: balance;
 }
+.hero2-delivery {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin: 0 0 14px; padding: 7px 14px;
+  background: #fbf5e4; border: 1px solid #ecd9a0; border-radius: 999px;
+  color: var(--ink); font-size: 0.92rem; font-weight: 700;
+}
+.hero2-delivery svg { color: var(--amber-dark); flex: none; }
 .hero2-lead {
   font-size: 1.1rem;
   color: var(--muted);
@@ -52,7 +59,7 @@
 .step .dwrap { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease; }
 .step .d { display: block; overflow: hidden; min-height: 0; font-size: 0.92rem; }
 .step .bar { display: none; height: 3px; margin-top: 10px; background: var(--border); border-radius: 2px; overflow: hidden; }
-.step .bar i { display: block; height: 100%; width: 0; background: var(--amber); animation: stepfill 3.2s linear forwards; }
+.step .bar i { display: block; height: 100%; width: 0; background: var(--amber); animation: stepfill 1.8s linear forwards; }
 .step[aria-current="step"] { background: #fff; color: var(--ink); }
 .step[aria-current="step"] .num { background: var(--ink); border-color: var(--ink); color: #fff; }
 .step[aria-current="step"] .dwrap { grid-template-rows: 1fr; }
